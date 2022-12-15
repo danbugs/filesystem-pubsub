@@ -20,34 +20,42 @@ impl Pubsub {
 
     pub fn publish(&self, message: &[u8], topic: &str) -> Result<()> {
         let topic_path = self.locale.join(topic);
-
+    
         // If the topic file doesn't exist, create it
         if !topic_path.exists() {
             fs::File::create(&topic_path)?;
         }
-
+    
         // Open the topic file for writing and append the message
         let mut topic_file = OpenOptions::new()
             .write(true)
             .append(true)
             .open(&topic_path)?;
-
-        topic_file.write_all(message)?;
-
+    
+        // Add a newline character at the end of the message
+        let mut message_to_write = Vec::from(message);
+        message_to_write.push(b'\n');
+    
+        topic_file.write_all(&message_to_write)?;
+    
         // Relay the message to each subscriber
         for entry in fs::read_dir(&self.locale)? {
             let entry = entry?;
             let path = entry.path();
             let file_name = path.file_name().unwrap().to_str().unwrap();
-
+    
             // If the file is a subscriber file (i.e., "<topic-name>-<subscription-token>")
             if file_name.starts_with(topic) && file_name.contains("-") {
                 let mut sub_file = OpenOptions::new().write(true).append(true).open(&path)?;
-
-                sub_file.write_all(message)?;
+    
+                // Add a newline character at the end of the message
+                let mut message_to_write = Vec::from(message);
+                message_to_write.push(b'\n');
+    
+                sub_file.write_all(&message_to_write)?;
             }
         }
-
+    
         Ok(())
     }
 
