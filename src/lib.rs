@@ -1,9 +1,9 @@
-use std::fs::{OpenOptions, read_dir};
-use std::io::{Write, Read};
+use std::fs::{read_dir, OpenOptions};
+use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::{env, fs};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 #[derive(Debug, Clone)]
 pub struct Pubsub {
@@ -54,11 +54,11 @@ impl Pubsub {
     pub fn receive(&self, sub_tok: &str) -> Result<Vec<u8>> {
         // Find the subscription file that matches the given subscription token
         let folder = &self.locale;
-        let files = read_dir(folder).expect("Unable to read files in folder");
+        let files = read_dir(folder).expect("Unable to read topics in pubsub");
         let mut sub_file_name = "".to_string();
-        
+
         for file in files {
-            let path = file.expect("Unable to read file path").path();
+            let path = file.expect("Unable to topic").path();
             let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
             if file_name.contains(sub_tok) {
                 sub_file_name = file_name.clone();
@@ -68,7 +68,8 @@ impl Pubsub {
         let sub_file_path = self.locale.join(sub_file_name);
 
         // Read the entire contents of the subscription file
-        let mut sub_file = fs::File::open(&sub_file_path)?;
+        let mut sub_file = fs::File::open(&sub_file_path)
+            .with_context(|| "no subscription found per given token")?;
         let mut sub_file_contents = Vec::new();
         sub_file.read_to_end(&mut sub_file_contents)?;
 
