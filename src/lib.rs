@@ -19,7 +19,8 @@ impl Pubsub {
     }
 
     pub fn publish(&self, message: &[u8], topic: &str) -> Result<()> {
-        let topic_path = self.locale.join(topic);
+        let fixed_topic = topic.replace("-", "_");
+        let topic_path = self.locale.join(fixed_topic.clone());
     
         // If the topic file doesn't exist, create it
         if !topic_path.exists() {
@@ -45,7 +46,7 @@ impl Pubsub {
             let file_name = path.file_name().unwrap().to_str().unwrap();
     
             // If the file is a subscriber file (i.e., "<topic-name>-<subscription-token>")
-            if file_name.starts_with(topic) && file_name.contains("-") {
+            if file_name.starts_with(&fixed_topic) && file_name.contains("-") {
                 let mut sub_file = OpenOptions::new().write(true).append(true).open(&path)?;
     
                 // Add a newline character at the end of the message
@@ -92,14 +93,16 @@ impl Pubsub {
     }
 
     pub fn subscribe(&self, topic: &str) -> Result<String> {
+        let fixed_topic = topic.replace("-", "_");
+
         // Generate a random UUID to use as the subscription token
         let sub_token = uuid::Uuid::new_v4().to_string();
 
         // Create the path for the subscription file
-        let sub_file_path = self.locale.join(format!("{}-{}", topic, sub_token));
+        let sub_file_path = self.locale.join(format!("{}-{}", fixed_topic, sub_token));
 
         // Clone the topic file to the subscription file
-        std::fs::copy(self.locale.join(topic), &sub_file_path)?;
+        std::fs::copy(self.locale.join(fixed_topic), &sub_file_path)?;
 
         Ok(sub_token)
     }
