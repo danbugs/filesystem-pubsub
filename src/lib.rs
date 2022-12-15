@@ -97,12 +97,13 @@ impl Pubsub {
             return Ok(Vec::new());
         }
     
-        let last_message = last_message.unwrap();
+        let mut last_message = last_message.unwrap().to_vec();
+        last_message.push(b'\n');
         tracing::debug!("last message: {:?}", last_message);
     
         // Truncate the subscription file to remove the last message
         let sub_file = fs::OpenOptions::new().write(true).open(&sub_file_path)?;
-        sub_file.set_len((sub_file_contents.len() - last_message.len() + 1) as u64)?;
+        sub_file.set_len((sub_file_contents.len() - last_message.len()) as u64)?;
         tracing::debug!("truncated subscription file");
     
         Ok(Vec::from(last_message))
