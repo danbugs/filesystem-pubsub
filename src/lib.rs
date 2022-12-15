@@ -66,7 +66,7 @@ impl Pubsub {
         let files = read_dir(folder).expect("Unable to read topics in pubsub");
         tracing::debug!("looking for subscription under: {:?}", files);
         let mut sub_file_name = "".to_string();
-
+    
         for file in files {
             let path = file.expect("Unable to topic").path();
             let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
@@ -77,23 +77,30 @@ impl Pubsub {
         }
         let sub_file_path = self.locale.join(sub_file_name);
         tracing::debug!("found subscription file: {:?}", sub_file_path);
-
+    
         // Read the entire contents of the subscription file
         let mut sub_file = fs::File::open(&sub_file_path)
             .with_context(|| "no subscription found per given token")?;
         let mut sub_file_contents = Vec::new();
         sub_file.read_to_end(&mut sub_file_contents)?;
         tracing::debug!("subscription file contents: {:?}", sub_file_contents);
-
+    
         // Read the last message from the subscription file
-        let last_message = sub_file_contents.split(|b| *b == b'\n').last().unwrap();
+        let last_message = sub_file_contents.split(|b| *b == b'\n').last();
+    
+        // Check if there is a last message
+        if last_message.is_none() {
+            return Ok(Vec::new());
+        }
+    
+        let last_message = last_message.unwrap();
         tracing::debug!("last message: {:?}", last_message);
-
+    
         // Truncate the subscription file to remove the last message
         let sub_file = fs::OpenOptions::new().write(true).open(&sub_file_path)?;
         sub_file.set_len((sub_file_contents.len() - last_message.len()) as u64)?;
         tracing::debug!("truncated subscription file");
-
+    
         Ok(Vec::from(last_message))
     }
 
