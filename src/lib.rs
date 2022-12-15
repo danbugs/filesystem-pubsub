@@ -98,8 +98,10 @@ impl Pubsub {
         }
     
         let mut last_message = last_message.unwrap().to_vec();
-        last_message.push(b'\n');
         tracing::debug!("last message: {:?}", last_message);
+
+        sub_file_contents.push(b'\n');
+        last_message.push(b'\n');
     
         // Truncate the subscription file to remove the last message
         let sub_file = fs::OpenOptions::new().write(true).open(&sub_file_path)?;
