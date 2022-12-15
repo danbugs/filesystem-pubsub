@@ -83,11 +83,15 @@ impl Pubsub {
             .with_context(|| "no subscription found per given token")?;
         let mut sub_file_contents = Vec::new();
         sub_file.read_to_end(&mut sub_file_contents)?;
+
+        // remove \n (i.e., last element of sub_file_contents)
+        sub_file_contents.pop();
+
         tracing::debug!("subscription file contents: {:?}", sub_file_contents);
     
         // Read the last message from the subscription file
         let last_message = sub_file_contents.split(|b| *b == b'\n').last();
-    
+
         // Check if there is a last message
         if last_message.is_none() {
             return Ok(Vec::new());
@@ -98,7 +102,7 @@ impl Pubsub {
     
         // Truncate the subscription file to remove the last message
         let sub_file = fs::OpenOptions::new().write(true).open(&sub_file_path)?;
-        sub_file.set_len((sub_file_contents.len() - last_message.len()) as u64)?;
+        sub_file.set_len((sub_file_contents.len() - last_message.len() + 1) as u64)?;
         tracing::debug!("truncated subscription file");
     
         Ok(Vec::from(last_message))
