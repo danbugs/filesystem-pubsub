@@ -1,6 +1,6 @@
 [package]
 name = "filesystem-pubsub"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 authors = [ "Dan Chiarlone" ]
 description = "A filesystem-based pubsub implementation"
@@ -20,3 +20,4 @@ test = false
 [dependencies]
 anyhow = "1"
 uuid = { version = "1.1", features = ["v4"] }
+tracing = { version = "0.1", features = ["log"] }

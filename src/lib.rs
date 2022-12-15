@@ -64,6 +64,7 @@ impl Pubsub {
         // Find the subscription file that matches the given subscription token
         let folder = &self.locale;
         let files = read_dir(folder).expect("Unable to read topics in pubsub");
+        tracing::debug!("looking for subscription under: {:?}", files);
         let mut sub_file_name = "".to_string();
 
         for file in files {
@@ -75,19 +76,23 @@ impl Pubsub {
             }
         }
         let sub_file_path = self.locale.join(sub_file_name);
+        tracing::debug!("found subscription file: {:?}", sub_file_path);
 
         // Read the entire contents of the subscription file
         let mut sub_file = fs::File::open(&sub_file_path)
             .with_context(|| "no subscription found per given token")?;
         let mut sub_file_contents = Vec::new();
         sub_file.read_to_end(&mut sub_file_contents)?;
+        tracing::debug!("subscription file contents: {:?}", sub_file_contents);
 
         // Read the last message from the subscription file
         let last_message = sub_file_contents.split(|b| *b == b'\n').last().unwrap();
+        tracing::debug!("last message: {:?}", last_message);
 
         // Truncate the subscription file to remove the last message
         let sub_file = fs::OpenOptions::new().write(true).open(&sub_file_path)?;
         sub_file.set_len((sub_file_contents.len() - last_message.len()) as u64)?;
+        tracing::debug!("truncated subscription file");
 
         Ok(Vec::from(last_message))
     }
@@ -103,6 +108,8 @@ impl Pubsub {
 
         // Clone the topic file to the subscription file
         std::fs::copy(self.locale.join(fixed_topic), &sub_file_path)?;
+
+        tracing::debug!("created subscription file: {:?}", sub_file_path);
 
         Ok(sub_token)
     }
