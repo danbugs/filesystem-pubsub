@@ -5,6 +5,7 @@ use std::{env, fs};
 
 use anyhow::Result;
 
+#[derive(Debug, Clone)]
 pub struct Pubsub {
     locale: PathBuf,
 }
